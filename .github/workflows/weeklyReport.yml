@@ -1,0 +1,57 @@
+name: Weekly Site Report
+
+on:
+  # The live instance runs on a schedule from a private repo. In this public copy
+  # the schedule is off; to run it yourself, add the secrets listed in the README
+  # and restore the cron line:
+  # schedule:
+  #   - cron: '13 9 * * 1'
+  workflow_dispatch: {} # manual trigger for testing
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-save groq-sdk resend @vercel/blob playwright pixelmatch@5.3.0 pngjs
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run weekly report
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+        run: node scripts/weeklyReport.js
+
+      - name: Commit reports index
+        run: |
+          git config user.name "jarvis-bot"
+          git config user.email "jarvis-bot@users.noreply.github.com"
+          if [ ! -f dashboard/reports-index.json ]; then
+            echo "No reports-index.json was written this run — nothing to commit."
+            exit 0
+          fi
+          git add dashboard/reports-index.json
+          git diff --staged --quiet && exit 0
+          git commit -m "Update weekly reports index [skip ci]"
+          if ! git pull --rebase origin main; then
+            echo "Snapshot conflict — discarding this cycle, next run will refresh it."
+            git rebase --abort
+            exit 0
+          fi
+          git push

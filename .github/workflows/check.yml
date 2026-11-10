@@ -1,0 +1,57 @@
+name: Site Health Check
+
+on:
+  # The live instance runs on a schedule from a private repo. In this public copy
+  # the schedule is off; to run it yourself, add the secrets listed in the README
+  # and restore the cron line:
+  # schedule:
+  #   - cron: '7,22,37,52 * * * *'
+  workflow_dispatch: {} # lets you manually trigger a run from the Actions tab, for testing
+
+permissions:
+  contents: write # needed so the workflow can commit status.json back to the repo
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-save groq-sdk resend @octokit/rest
+
+      - name: Run health check
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FIX_PR_TOKEN: ${{ secrets.FIX_PR_TOKEN }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: node scripts/check.js
+
+      - name: Commit updated status (if changed)
+        run: |
+          git config user.name "jarvis-bot"
+          git config user.email "jarvis-bot@users.noreply.github.com"
+          git add dashboard/status.json dashboard/incidents.json
+          git diff --staged --quiet && exit 0
+
+          git commit -m "Update site status [skip ci]"
+
+          # If another run landed a commit in between our checkout and now,
+          # a rebase conflict here is expected and harmless — status.json
+          # and incidents.json are just snapshots that fully refresh every
+          # cycle anyway, so it's safe to drop this one and let the next
+          # scheduled run pick up a fresh snapshot instead of failing loudly.
+          if ! git pull --rebase origin main; then
+            echo "Snapshot conflict with a concurrent run — discarding this cycle, next run will refresh it."
+            git rebase --abort
+            exit 0
+          fi
+
+          git push

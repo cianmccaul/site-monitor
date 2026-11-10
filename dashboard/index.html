@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Jarvis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- Home screen app behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<meta name="theme-color" content="#06060a">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon-32.png" sizes="32x32">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06060a;
+    --surface: rgba(255,255,255,0.045);
+    --surface-2: rgba(255,255,255,0.075);
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text-primary: #f2f2f6;
+    --text-secondary: #9696a5;
+    --text-muted: #56566a;
+    --blue: #4c8bff;
+    --blue-glow: rgba(76,139,255,0.32);
+    --green: #2ed4a3;
+    --green-glow: rgba(46,212,163,0.3);
+    --red: #ff4d6a;
+    --red-glow: rgba(255,77,106,0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  @media (display-mode: standalone) {
+    body { padding-top: max(env(safe-area-inset-top), 59px); }
+  }
+
+  /* ---------- WebGL shader background ---------- */
+  #shaderBg { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; opacity: 0.55; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 232px;
+    flex-shrink: 0;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: rgba(255,255,255,0.02);
+    border-right: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-bottom: 32px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--blue), #8a6bff);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 0 8px rgba(76,139,255,0.6), 0 0 32px 4px var(--blue-glow);
+  }
+  .brand-name { font-family: 'Sora', sans-serif; font-size: 15.5px; font-weight: 600; }
+
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.85; }
+  .nav-item.active {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+  .nav-item.active svg { opacity: 1; color: var(--blue); }
+
+  .sidebar-foot {
+    margin-top: auto;
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(76,139,255,0.14), rgba(138,107,255,0.05));
+    border: 1px solid rgba(76,139,255,0.25);
+  }
+  .sidebar-foot .t { font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 600; margin-bottom: 3px; }
+  .sidebar-foot .d { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* ---------- Main ---------- */
+  .main { flex: 1; position: relative; z-index: 1; min-width: 0; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 36px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    z-index: 5;
+  }
+  .topbar-title { font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 600; }
+  .topbar-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    width: 200px;
+  }
+  .search svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .icon-btn svg { width: 16px; height: 16px; color: var(--text-secondary); }
+  .icon-btn .ping {
+    position: absolute; top: -3px; right: -3px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 6px var(--red-glow);
+  }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), #8a6bff);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Sora', sans-serif; font-weight: 600; font-size: 12.5px;
+  }
+
+  .content { padding: 32px 36px 60px; }
+
+  /* ---------- Status strip ---------- */
+  .status-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .status-cell { background: var(--surface); padding: 20px 24px; }
+  .status-cell .num {
+    font-family: 'Sora', sans-serif; font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
+    background: linear-gradient(180deg, #fff, #aeaebc);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .status-cell .num.green { background: linear-gradient(180deg, #6bf0c8, var(--green)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 16px var(--green-glow)); }
+  .status-cell .num.red { background: linear-gradient(180deg, #ff8a9d, var(--red)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 16px var(--red-glow)); }
+  .status-cell .lbl { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+  .section-label {
+    font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 600;
+    color: var(--text-secondary); margin: 0 0 12px; text-transform: none;
+  }
+
+  /* ---------- AI insight ---------- */
+  .insight-card {
+    position: relative; overflow: hidden;
+    background: linear-gradient(160deg, rgba(76,139,255,0.13), rgba(138,107,255,0.04) 60%, rgba(255,255,255,0.03));
+    border: 1px solid rgba(76,139,255,0.38);
+    box-shadow: 0 0 50px rgba(76,139,255,0.16), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-radius: 18px;
+    padding: 24px 26px;
+    margin-bottom: 32px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .insight-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .insight-tag {
+    font-family: 'Sora', sans-serif; font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+    color: var(--blue); background: rgba(76,139,255,0.16); padding: 4px 10px; border-radius: 20px;
+  }
+  .insight-time { font-size: 11.5px; color: var(--text-muted); }
+  .insight-title { font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 500; margin-bottom: 9px; }
+  .insight-body { font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); max-width: 620px; margin-bottom: 18px; }
+  .insight-actions { display: flex; gap: 10px; }
+  .btn {
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500;
+    padding: 8px 16px; border-radius: 9px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); color: var(--text-primary);
+  }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 18px var(--blue-glow); }
+
+  /* ---------- Sites ---------- */
+  .sites { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 32px; }
+  .site-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  .site-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .site-name { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 500; }
+  .site-url { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 4px var(--green), 0 0 20px 4px var(--green-glow); flex-shrink: 0; margin-top: 5px; }
+  .site-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .metric .metric-num { font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 500; }
+  .metric .metric-lbl { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ---------- Feed ---------- */
+  .feed { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  .feed-row { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .feed-row:last-child { border-bottom: none; }
+  .feed-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .feed-dot.red { background: var(--red); box-shadow: 0 0 3px var(--red), 0 0 14px 2px var(--red-glow); }
+  .feed-dot.green { background: var(--green); box-shadow: 0 0 3px var(--green), 0 0 14px 2px var(--green-glow); }
+  .feed-text { flex: 1; font-size: 13px; }
+  .feed-text .site { color: var(--text-primary); font-weight: 500; }
+  .feed-text .desc { color: var(--text-secondary); }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .settings-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; text-align: center; color: var(--text-secondary); font-size: 13.5px; }
+
+  .notif-dropdown {
+    position: absolute; top: 44px; right: 0; width: 300px;
+    background: #101018; border: 1px solid var(--border-strong); border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    display: none; overflow: hidden; z-index: 10;
+  }
+  .notif-dropdown.open { display: block; }
+  .notif-dropdown .h { padding: 12px 16px; font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 600; border-bottom: 1px solid var(--border); }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center; z-index: 20;
+    backdrop-filter: blur(4px);
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 480px; max-width: 90vw;
+    background: #0d0d14; border: 1px solid var(--border-strong); border-radius: 18px;
+    padding: 26px 28px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal h3 { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 500; margin-bottom: 12px; }
+  .modal p { font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); margin-bottom: 10px; }
+  .modal-close { margin-top: 14px; }
+
+  .no-results { padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+  /* ---------- Mobile (iPhone etc.) ---------- */
+  @media (max-width: 780px) {
+    body { flex-direction: column; }
+
+    .sidebar {
+      position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+      width: 100%; height: auto;
+      flex-direction: row; align-items: center; justify-content: space-around;
+      padding: 10px 6px calc(10px + env(safe-area-inset-bottom));
+      border-right: none; border-top: 1px solid var(--border);
+      background: rgba(8,8,12,0.85);
+      z-index: 30;
+    }
+    .brand, .sidebar-foot { display: none; }
+    .nav { flex-direction: row; width: 100%; justify-content: space-around; }
+    .nav-item {
+      flex-direction: column; gap: 3px; padding: 6px 8px;
+      font-size: 10px; text-align: center;
+    }
+    .nav-item svg { width: 20px; height: 20px; }
+
+    .main { padding-bottom: 76px; }
+    .topbar { padding: 16px 18px; }
+    .topbar-title { font-size: 15px; }
+    .topbar-sub { font-size: 11px; }
+    .search { display: none; }
+    .live-badge span:last-child { display: none; }
+    .live-badge { padding: 6px; }
+
+    .content { padding: 20px 18px 40px; }
+    .status-strip { grid-template-columns: repeat(2, 1fr); }
+    .status-cell { padding: 16px 18px; }
+    .status-cell .num { font-size: 24px; }
+
+    .sites { grid-template-columns: 1fr; }
+    .insight-card { padding: 20px; }
+    .insight-title { font-size: 15.5px; }
+
+    .modal { width: 92vw; padding: 20px; }
+  }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 12px 6px 10px;
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 4px var(--green), 0 0 10px 2px var(--green-glow);
+    animation: pulse-live 2s ease-in-out infinite;
+  }
+  .live-dot.stale { background: var(--text-muted); box-shadow: none; animation: none; }
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="shaderBg"></canvas>
+
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">J</div>
+    <div class="brand-name">Jarvis</div>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" data-view="overview" onclick="switchView('overview', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Overview
+    </div>
+    <div class="nav-item" data-view="sites" onclick="switchView('sites', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Sites
+    </div>
+    <div class="nav-item" data-view="incidents" onclick="switchView('incidents', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+      Incidents
+    </div>
+    <div class="nav-item" data-view="clients" onclick="switchView('clients', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+      Clients
+    </div>
+    <div class="nav-item" data-view="settings" onclick="switchView('settings', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg>
+      Settings
+    </div>
+  </div>
+  <div class="sidebar-foot" id="sidebarFoot">
+    <div class="t" id="sidebarFootTitle">All systems normal</div>
+    <div class="d" id="sidebarFootDetail">Waiting for first live check…</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Overview</div>
+      <div class="topbar-sub">Friday, 11 September</div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge" id="liveBadge">
+        <span class="live-dot"></span>
+        <span id="liveText">Checking…</span>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="Search sites…" oninput="filterSites(this.value)"
+          style="background:none;border:none;outline:none;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:13px;width:100%;">
+      </div>
+      <div class="icon-btn" style="position:relative;" onclick="toggleNotifs(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        <div class="ping"></div>
+        <div class="notif-dropdown" id="notifDropdown"></div>
+      </div>
+      <div class="avatar">CM</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div id="view-overview" class="view active">
+      <div class="status-strip">
+        <div class="status-cell"><div class="num green" id="statHealthy">—</div><div class="lbl">Sites healthy</div></div>
+        <div class="status-cell"><div class="num" id="statUptime">—</div><div class="lbl">Uptime, 30 days</div></div>
+        <div class="status-cell"><div class="num red" id="statOpen">—</div><div class="lbl">Open incident</div></div>
+        <div class="status-cell"><div class="num" id="statResponse">—</div><div class="lbl">Avg response</div></div>
+      </div>
+
+      <div class="section-label">AI insight</div>
+      <div class="insight-card" id="insightCard" style="display:none;">
+        <div class="insight-top">
+          <span class="insight-tag" id="insightTag">Investigated</span>
+          <span class="insight-time" id="insightTime"></span>
+        </div>
+        <div class="insight-title" id="insightTitle"></div>
+        <div class="insight-body" id="insightBody"></div>
+        <div class="insight-actions">
+          <button class="btn primary" id="insightReviewBtn">Ask Jarvis</button>
+          <button class="btn" onclick="document.getElementById('insightCard').style.display='none'">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="section-label">Sites</div>
+      <div class="sites" id="siteGrid"></div>
+      <div class="no-results" id="noResults" style="display:none;">No sites match your search.</div>
+
+      <div class="section-label">Recent activity</div>
+      <div class="feed"></div>
+    </div>
+
+    <div id="view-sites" class="view">
+      <div class="section-label">All sites</div>
+      <div class="sites" id="siteGridFull"></div>
+    </div>
+
+    <div id="view-incidents" class="view">
+      <div class="section-label">All incidents</div>
+      <div class="feed"></div>
+    </div>
+
+    <div id="view-clients" class="view">
+      <div class="section-label">Clients</div>
+      <div class="settings-box">Client records aren't wired up yet — this is where per-client contact info and site assignments will live.</div>
+    </div>
+
+    <div id="view-settings" class="view">
+      <div class="section-label">Settings</div>
+      <div class="settings-box">Notification email, check frequency, and site configuration will live here once connected to the live agent.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <button class="btn primary modal-close" onclick="document.getElementById('modalBackdrop').classList.remove('open')">Close</button>
+  </div>
+</div>
+
+<script>
+  // ---------- Site registry ----------
+  // Kept here rather than fetched from sites.json, since sites.json lives
+  // outside the dashboard/ folder Vercel serves. Keep this in sync by hand
+  // whenever a site is added to sites.json for monitoring.
+  const SITE_REGISTRY = [
+    { name: 'Deme House Painting', url: 'https://deme-housepainting.vercel.app/', shortUrl: 'deme-housepainting.vercel.app' },
+    { name: 'Jarvis Sandbox', url: 'https://jarvis-sandbox-seven.vercel.app/api/health', shortUrl: 'jarvis-sandbox-seven.vercel.app' },
+    { name: 'Halide', url: 'https://halide-eta.vercel.app/api/health', shortUrl: 'halide-eta.vercel.app' },
+  ];
+
+  // ---------- Shader background config — edit these freely ----------
+  const SHADER_CONFIG = {
+    color1: [0x19/255, 0x2d/255, 0xff/255],  // #192dff
+    color2: [0x21/255, 0x85/255, 0xff/255],  // #2185ff
+    color3: [0x00/255, 0x00/255, 0x18/255],  // #000018
+    brightness: 1.2,
+    speed: 0.03,      // lower = slower drift
+    density: 1.2,
+    strength: 3.4,
+    frameRate: 10,    // capped low on purpose — calm, not busy
+  };
+
+  function initShaderBg() {
+    const canvas = document.getElementById('shaderBg');
+    const gl = canvas.getContext('webgl');
+    if (!gl) { canvas.style.display = 'none'; return; }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const vertSrc = `
+      attribute vec2 aPos;
+      void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+    `;
+    const fragSrc = `
+      precision highp float;
+      uniform vec2 uResolution;
+      uniform float uTime;
+      uniform vec3 uColor1;
+      uniform vec3 uColor2;
+      uniform vec3 uColor3;
+      uniform float uSpeed;
+      uniform float uDensity;
+      uniform float uStrength;
+      uniform float uBrightness;
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / uResolution.xy;
+        vec2 p = uv * 2.0 - 1.0;
+        p.y *= uResolution.y / uResolution.x;
+
+        float t = uTime * uSpeed;
+        float wave = sin((p.x * uDensity + t) * 3.0) * 0.5
+                   + cos((p.y * uDensity - t * 0.7) * 3.0) * 0.5;
+        wave *= uStrength * 0.15;
+
+        float mixA = smoothstep(-1.0, 1.0, p.y + wave);
+        vec3 col = mix(uColor3, uColor1, mixA);
+        float mixB = smoothstep(0.25, 1.0, uv.x + wave * 0.3);
+        col = mix(col, uColor2, mixB);
+        col *= uBrightness;
+
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `;
+
+    function compile(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    }
+
+    const program = gl.createProgram();
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, vertSrc));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragSrc));
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(program, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    const uResolution = gl.getUniformLocation(program, 'uResolution');
+    const uTime = gl.getUniformLocation(program, 'uTime');
+    gl.uniform3fv(gl.getUniformLocation(program, 'uColor1'), SHADER_CONFIG.color1);
+    gl.uniform3fv(gl.getUniformLocation(program, 'uColor2'), SHADER_CONFIG.color2);
+    gl.uniform3fv(gl.getUniformLocation(program, 'uColor3'), SHADER_CONFIG.color3);
+    gl.uniform1f(gl.getUniformLocation(program, 'uSpeed'), SHADER_CONFIG.speed);
+    gl.uniform1f(gl.getUniformLocation(program, 'uDensity'), SHADER_CONFIG.density);
+    gl.uniform1f(gl.getUniformLocation(program, 'uStrength'), SHADER_CONFIG.strength);
+    gl.uniform1f(gl.getUniformLocation(program, 'uBrightness'), SHADER_CONFIG.brightness);
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform2f(uResolution, canvas.width, canvas.height);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let t0 = performance.now();
+    function frame() {
+      gl.uniform1f(uTime, (performance.now() - t0) / 1000);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (!reduceMotion) {
+        setTimeout(() => requestAnimationFrame(frame), 1000 / SHADER_CONFIG.frameRate);
+      }
+    }
+    frame();
+  }
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initShaderBg);
+  } else {
+    setTimeout(initShaderBg, 50);
+  }
+
+  // ---------- Live data ----------
+  let latestIncidents = [];
+
+  function openReportsModal(siteName) {
+    const reports = latestIncidents.filter((i) => i.site === siteName).slice().reverse();
+    document.getElementById('modalTitle').textContent = siteName + ' — Reports';
+    document.getElementById('modalBody').innerHTML = reports.length === 0
+      ? 'No reports yet for this site.'
+      : reports.map((i) => {
+          const label = i.event === 'down' ? 'Down' : 'Recovered';
+          const detail = i.explanation ? ' — ' + i.explanation : '';
+          const pr = i.prUrl ? ` <a href="${i.prUrl}" target="_blank" rel="noopener">View fix PR</a>` : '';
+          return `<strong>${label}</strong> · ${timeAgo(i.timestamp)}${detail}${pr}<br/><br/>`;
+        }).join('');
+    document.getElementById('modalBackdrop').classList.add('open');
+  }
+
+  function timeAgo(iso) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.round(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.round(hrs / 24);
+    return days === 1 ? 'Yesterday' : days + 'd ago';
+  }
+
+  function siteCardHTML(site, statusEntry, incidentCount) {
+    const up = statusEntry ? statusEntry.up : null;
+    const color = up === null ? 'var(--text-muted)' : up ? 'var(--green)' : 'var(--red)';
+    const glow = up === null ? '' : `;box-shadow:0 0 4px ${up ? 'var(--green)' : 'var(--red)'}, 0 0 20px 4px ${up ? 'var(--green-glow)' : 'var(--red-glow)'}`;
+    const statusText = up === null ? 'Unknown' : up ? 'Up' : 'Down';
+    return `
+      <div class="site-card" data-name="${site.name.toLowerCase()}" data-url="${site.url}">
+        <div class="site-top">
+          <div><div class="site-name">${site.name}</div><div class="site-url">${site.shortUrl}</div></div>
+          <div class="dot" style="background:${color}${glow}"></div>
+        </div>
+        <div class="site-metrics">
+          <div class="metric"><div class="metric-num">${statusText}</div><div class="metric-lbl">Status</div></div>
+          <div class="metric"><div class="metric-num">${incidentCount}</div><div class="metric-lbl">Incidents</div></div>
+        </div>
+        <button class="btn" style="width:100%;margin-top:12px;" onclick="openReportsModal('${site.name.replace(/'/g, "\\'")}')">View reports</button>
+      </div>
+    `;
+  }
+
+  function renderSites(status, incidents) {
+    let healthyCount = 0;
+    const cardsHtml = SITE_REGISTRY.map((site) => {
+      const entry = status ? status[site.url] : null;
+      if (entry && entry.up) healthyCount++;
+      const count = incidents ? incidents.filter((i) => i.site === site.name && i.event === 'down').length : 0;
+      return siteCardHTML(site, entry, count);
+    }).join('');
+    document.getElementById('siteGrid').innerHTML = cardsHtml;
+    document.getElementById('siteGridFull').innerHTML = cardsHtml;
+    document.getElementById('statHealthy').textContent = healthyCount;
+
+    const downCount = SITE_REGISTRY.length - healthyCount;
+    document.getElementById('statOpen').textContent = downCount;
+
+    const footTitle = document.getElementById('sidebarFootTitle');
+    const footDetail = document.getElementById('sidebarFootDetail');
+    footTitle.textContent = downCount === 0 ? 'All systems normal' : downCount + ' site' + (downCount > 1 ? 's' : '') + ' need attention';
+    footDetail.textContent = 'Last check ran ' + (status && status.lastChecked ? timeAgo(status.lastChecked) : 'recently') + ' across ' + SITE_REGISTRY.length + ' site' + (SITE_REGISTRY.length > 1 ? 's' : '') + '.';
+  }
+
+  function renderInsight(incidents) {
+    const card = document.getElementById('insightCard');
+    if (!incidents || incidents.length === 0) { card.style.display = 'none'; return; }
+    const latestDown = [...incidents].reverse().find((i) => i.event === 'down');
+    if (!latestDown) { card.style.display = 'none'; return; }
+    const recoveredAfter = incidents.some((i) => i.site === latestDown.site && i.event === 'up' && new Date(i.timestamp) > new Date(latestDown.timestamp));
+    document.getElementById('insightTag').textContent = recoveredAfter ? 'Solved' : (latestDown.prUrl ? 'Fix proposed' : 'Investigated');
+    document.getElementById('insightTime').textContent = timeAgo(latestDown.timestamp);
+    document.getElementById('insightTitle').textContent = `${latestDown.site} — health check failed`;
+    document.getElementById('insightBody').textContent = latestDown.explanation || 'No explanation recorded.';
+    document.getElementById('insightReviewBtn').onclick = () => {
+      window.jarvisOpenChatFor && window.jarvisOpenChatFor(latestDown.site, latestDown.timestamp);
+    };
+    card.style.display = '';
+  }
+
+  function renderIncidentFeed(incidents) {
+    const recent = incidents.slice(-8).reverse();
+    const html = recent.length === 0
+      ? '<div class="feed-row"><div class="feed-text" style="color:var(--text-muted);">No incidents yet.</div></div>'
+      : recent.map(i => `
+        <div class="feed-row" style="cursor:pointer;" onclick="window.jarvisOpenChatFor && window.jarvisOpenChatFor('${i.site.replace(/'/g, "\\'")}','${i.timestamp}')">
+          <div class="feed-dot ${i.event === 'down' ? 'red' : 'green'}"></div>
+          <div class="feed-text"><span class="site">${i.site}</span> <span class="desc">— ${i.event === 'down' ? 'health check failed' : 'recovered'}</span></div>
+          <div class="feed-time">${timeAgo(i.timestamp)}</div>
+        </div>
+      `).join('');
+    document.querySelectorAll('.feed').forEach(f => f.innerHTML = html);
+    renderNotifDropdown(recent.slice(0, 4));
+  }
+
+  function renderNotifDropdown(recent) {
+    const el = document.getElementById('notifDropdown');
+    const header = '<div class="h">Notifications</div>';
+    const rows = recent.length === 0
+      ? '<div class="feed-row"><div class="feed-text" style="color:var(--text-muted);font-size:12.5px;">No notifications yet.</div></div>'
+      : recent.map(i => `
+        <div class="feed-row" style="cursor:pointer;" onclick="window.jarvisOpenChatFor && window.jarvisOpenChatFor('${i.site.replace(/'/g, "\\'")}','${i.timestamp}')">
+          <div class="feed-dot ${i.event === 'down' ? 'red' : 'green'}"></div>
+          <div class="feed-text" style="font-size:12.5px;"><span class="site">${i.site}</span> <span class="desc">— ${i.event === 'down' ? 'health check failed' : 'recovered'}</span></div>
+        </div>
+      `).join('');
+    el.innerHTML = header + rows;
+  }
+
+  async function loadLiveData() {
+    const liveText = document.getElementById('liveText');
+    const liveDot = document.querySelector('.live-dot');
+    let status = null;
+    let incidents = [];
+    try {
+      const res = await fetch('/status.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('no status file yet');
+      status = await res.json();
+      liveText.textContent = status.lastChecked ? 'Live · checked ' + timeAgo(status.lastChecked) : 'Live';
+      liveDot.classList.remove('stale');
+    } catch {
+      liveText.textContent = 'Waiting for first live check…';
+      liveDot.classList.add('stale');
+    }
+
+    try {
+      const incRes = await fetch('/incidents.json', { cache: 'no-store' });
+      if (incRes.ok) incidents = await incRes.json();
+    } catch { /* incidents.json not deployed yet */ }
+
+    latestIncidents = incidents;
+    renderSites(status, incidents);
+    renderIncidentFeed(incidents);
+    renderInsight(incidents);
+  }
+
+  loadLiveData();
+  setInterval(loadLiveData, 60000); // re-check every 60s while the tab is open
+
+  function switchView(id, el) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function filterSites(query) {
+    const q = query.trim().toLowerCase();
+    const cards = document.querySelectorAll('#siteGrid .site-card');
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const match = card.dataset.name.includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) visibleCount++;
+    });
+    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+  }
+
+  function toggleNotifs(e) {
+    e.stopPropagation();
+    document.getElementById('notifDropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', () => document.getElementById('notifDropdown').classList.remove('open'));
+
+  document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'modalBackdrop') e.target.classList.remove('open');
+  });
+</script>
+<script src="/chat.js"></script>
+
+</body>
+</html>

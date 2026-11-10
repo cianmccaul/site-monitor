@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jarvis — Sign in</title>
+<style>
+  html, body { height: 100%; margin: 0; background: #050507; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, 'Inter', sans-serif; color: #eee;
+    padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+  }
+  form {
+    width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 14px;
+    background: #0d0d14; border: 1px solid rgba(124,92,255,0.25);
+    border-radius: 16px; padding: 28px 24px;
+  }
+  h1 { font-size: 18px; margin: 0 0 6px; font-family: 'Sora', sans-serif; }
+  input {
+    background: #06060a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    padding: 10px 12px; color: #eee; font-size: 14px;
+  }
+  button {
+    background: linear-gradient(135deg, #3d7fff, #7c5cff); border: none; border-radius: 8px;
+    padding: 11px; color: #fff; font-size: 14px; cursor: pointer;
+  }
+  #err { color: #ff4d6a; font-size: 13px; min-height: 16px; }
+</style>
+</head>
+<body>
+  <form id="f">
+    <h1>Jarvis Dashboard</h1>
+    <input id="u" placeholder="Username" autocomplete="username" required>
+    <input id="p" type="password" placeholder="Password" autocomplete="current-password" required>
+    <div id="err"></div>
+    <button type="submit">Sign in</button>
+  </form>
+  <script>
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('u').value;
+      const password = document.getElementById('p').value;
+      const err = document.getElementById('err');
+      err.textContent = '';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        if (res.ok) {
+          window.location.href = '/';
+        } else {
+          const data = await res.json().catch(() => ({}));
+          err.textContent = data.error || 'Sign in failed.';
+        }
+      } catch {
+        err.textContent = 'Network error — try again.';
+      }
+    });
+  </script>
+</body>
+</html>

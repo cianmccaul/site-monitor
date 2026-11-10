@@ -1,0 +1,125 @@
+[
+  {
+    "site": "Deme House Painting",
+    "url": "https://deme-housepainting.vercel.app/this-page-does-not-exist",
+    "event": "down",
+    "timestamp": "2026-09-11T01:34:24.135Z",
+    "explanation": "A 404 response means the health‑check URL isn’t finding any resource, so the check fails because it expects a successful (200‑range) response. Most likely the path being probed ( /this-page-does-not-exist ) either isn’t routed to a fallback page or the routing rules in your Vercel config are mis‑configured. First, verify that the health‑check endpoint actually points to a real page (e.g., add a simple `/health` route that returns 200). Then, review your Vercel `vercel.json` (or framework routing) to make sure catch‑all or rewrite rules aren’t inadvertently sending unknown paths to a 404."
+  },
+  {
+    "site": "Deme House Painting",
+    "url": "https://deme-housepainting.vercel.app/",
+    "event": "up",
+    "timestamp": "2026-09-11T01:40:44.065Z",
+    "explanation": null
+  },
+  {
+    "site": "Deme House Painting",
+    "url": "https://deme-housepainting.vercel.app/this-page-does-not-exist",
+    "event": "down",
+    "timestamp": "2026-09-11T15:51:05.131Z",
+    "explanation": "A 404 response from the health‑check URL tells Vercel (or your monitoring tool) that the requested path isn’t being served, so the check is considered failed. This usually means the health‑check endpoint is missing, mis‑typed, or the routing rules in `vercel.json`/framework config don’t expose it. First, verify that the URL you gave the health check actually exists (or create a simple `/health` page that returns 200). Then, review your Vercel routing configuration to ensure the path isn’t being redirected or blocked by a rewrite/redirect rule."
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:02:23.975Z",
+    "explanation": "A 500 status means the server hit an internal error while handling the health‑check request, even though it responded quickly (≈ 89 ms). Most often this is caused by an unhandled exception or a missing/invalid configuration that the health endpoint depends on (e.g., a database connection, external API key, or required env variable). First, look at the server logs for the exact error stack trace at the time of the request. Next, verify that any services or environment variables the health check touches (such as DB URLs, API tokens, or Vercel build‑time secrets) are present and correctly configured."
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:11:41.985Z",
+    "explanation": "A 500 status means the health‑check endpoint threw an unhandled error on the server, and the 406 ms response time shows the request actually reached your code before failing. This usually points to a runtime exception (e.g., missing env var, failed DB connection, or syntax error introduced in a recent deploy). First, look at the server logs for the exact error stack trace at the time of the request. Then verify that any required environment variables or external services (database, API keys, etc.) are correctly configured and reachable."
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:24:22.900Z",
+    "explanation": "A 500 status means the server hit an unexpected error while processing the health‑check request, and the 679 ms response time shows the request actually ran far enough to hit some code before failing. The most common cause is an uncaught exception or a failed dependency (e.g., a database, external API, or missing environment variable) that the health endpoint touches. First, look at the server logs or Vercel function logs for the exact error stack trace at the time of the failure. Then verify that any services the health check depends on (database connection strings, API keys, etc.) are still reachable and correctly configured."
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:28:32.109Z",
+    "explanation": "A 500 status means the server hit an unhandled error while processing the health‑check request, and the 375 ms response time shows the request actually reached your code before it crashed. This most often points to a runtime exception (e.g., missing env variable, failed DB connection, or syntax error) that only surfaces when the health endpoint runs. First, look at the server logs for the exact error stack trace at the time of the request. Then verify that any external resources the health check depends on (database, third‑party API, required env vars) are available and correctly configured."
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:33:37.501Z",
+    "explanation": "A 500 status means the server threw an internal error while handling the health‑check request. Since the request timed out in only a few hundred milliseconds, the code probably hit an exception early (e.g., missing env variable, database connection failure, or a syntax/runtime error) rather than a timeout or network problem. First, look at the most recent server logs or Vercel deployment logs to see the exact error stack trace. Next, verify that any required environment variables or external services (like a DB) are correctly configured and reachable in the current deployment."
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:36:38.496Z",
+    "explanation": "A 500 status means the server hit an unhandled error while processing the health‑check request, even though it was able to respond quickly (≈ 223 ms). This usually points to something breaking in the code that runs the `/api/health` endpoint—often a missing environment variable, a failed database/third‑party connection, or a recent code change that throws an exception. First, look at the server logs (or Vercel’s deployment logs) for the exact error stack trace at the time of the failure. Then verify that any required env‑vars or external services the health check depends on are present and reachable.",
+    "prUrl": "https://github.com/cianmccaul/jarvis-sandbox/pull/1"
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T16:40:49.311Z",
+    "explanation": "A 500 status means the server hit an unhandled error while processing the health‑check request, so the code (or a dependency it calls) threw an exception rather than returning the expected “OK”. The fact that it timed out in only ~200 ms shows the request reached the server but failed quickly, typical of a runtime error or mis‑configured environment variable rather than a timeout or network problem. First, look at the server logs (or Vercel’s function logs) for the exact error stack trace that was generated at the time of the failure. Then verify whether a recent deploy or a changed environment variable (e.g., missing API key, DB connection string) could be causing the exception, and roll back or fix it accordingly.",
+    "prUrl": "https://github.com/cianmccaul/jarvis-sandbox/pull/2"
+  },
+  {
+    "site": "Halide",
+    "url": "https://halide-eta.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T17:54:34.725Z",
+    "explanation": "A 404 from the `/api/health` URL means the request is reaching Vercel but the route isn’t defined or isn’t being exported, so the server can’t find the endpoint at all. This usually points to a missing or misnamed file (e.g., `pages/api/health.js/ts`) or a routing/rewrite rule that’s been changed or omitted during the latest deploy. First, verify that the health‑check file exists in the repository and that it’s being built without errors. Then double‑check your Vercel configuration (such as `vercel.json` or framework routing settings) to make sure the `/api/health` path is correctly mapped to that file."
+  },
+  {
+    "site": "Halide",
+    "url": "https://halide-eta.vercel.app/api/health",
+    "event": "up",
+    "timestamp": "2026-09-11T17:57:48.908Z",
+    "explanation": null
+  },
+  {
+    "site": "Halide",
+    "url": "https://halide-eta.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-11T18:01:03.669Z",
+    "explanation": "A 500 status means the server hit an unhandled error while processing the health‑check request, and the 138 ms response time shows it actually reached your code before failing. Most likely a runtime exception (e.g., a missing env variable, database connection problem, or syntax error) is being thrown during the health‑check handler. First, look at the recent deployment logs or Vercel’s function error logs for that endpoint to see the exact exception. Then verify that any external services the health check depends on (database, third‑party API, required env vars) are correctly configured and reachable.",
+    "prUrl": "https://github.com/cianmccaul/Halide/pull/1"
+  },
+  {
+    "site": "Halide",
+    "url": "https://halide-eta.vercel.app/api/health",
+    "event": "up",
+    "timestamp": "2026-09-11T20:49:57.198Z",
+    "explanation": null
+  },
+  {
+    "site": "Jarvis Sandbox",
+    "url": "https://jarvis-sandbox-seven.vercel.app/api/health",
+    "event": "up",
+    "timestamp": "2026-09-12T01:00:20.474Z",
+    "explanation": null
+  },
+  {
+    "site": "Halide",
+    "url": "https://halide-eta.vercel.app/api/health",
+    "event": "down",
+    "timestamp": "2026-09-12T01:09:59.311Z",
+    "explanation": "A 500 response means the server hit an unhandled error while processing the health‑check request, so something in your backend code or its dependencies crashed. The fact that it happened quickly (≈150 ms) suggests the failure occurs early—most likely during app initialization, a database/third‑party connection, or a mis‑configured environment variable. First, look at the server logs for the exact exception stack trace at the time of the request. Then verify that all required services (e.g., your database, external APIs, and any secret keys) are reachable and correctly configured.",
+    "prUrl": "https://github.com/cianmccaul/Halide/pull/2"
+  },
+  {
+    "site": "Halide",
+    "url": "https://halide-eta.vercel.app/api/health",
+    "event": "up",
+    "timestamp": "2026-09-12T01:12:37.294Z",
+    "explanation": null
+  }
+]
