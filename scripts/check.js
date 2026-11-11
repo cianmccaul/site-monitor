@@ -171,6 +171,7 @@ async function main() {
           <p><strong>What Jarvis thinks happened:</strong></p>
           <p>${explanation.replace(/\n/g, '<br/>')}</p>
           ${prUrl ? `<hr/><p><strong>Jarvis opened a fix PR:</strong> <a href="${prUrl}">${prUrl}</a></p>` : ''}
+          ${!prUrl ? `<hr/><p><strong>No fix PR opened:</strong> ${escapeHtml(fixResult.reason)}</p>` : ''}
           ${approveLink ? `<p><a href="${approveLink}">Approve &amp; merge this fix</a></p>` : ''}
           <p><a href="${DASHBOARD_URL}/">Discuss this incident in Jarvis</a></p>
         `,
