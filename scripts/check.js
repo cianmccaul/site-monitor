@@ -9,6 +9,8 @@ const Groq = require('groq-sdk');
 const { Resend } = require('resend');
 const { proposeFix } = require('./proposeFix');
 
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 const SITES_PATH = path.join(__dirname, '..', 'sites.json');
 const STATE_PATH = path.join(__dirname, '..', 'dashboard', 'status.json');
 const INCIDENTS_PATH = path.join(__dirname, '..', 'dashboard', 'incidents.json');
