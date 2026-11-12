@@ -2,7 +2,7 @@
 
 Checks my sites every 15 minutes, explains outages in plain English, and opens a small, guarded fix PR I can approve from my phone.
 
-**[Live demo](https://jarvis-demo.pages.dev)** · **[Portfolio](https://cianmccaul.vercel.app)**
+**[Live demo](https://cian-jarvis-demo.vercel.app)** · **[Portfolio](https://cianmccaul.vercel.app)**
 
 ![The Jarvis dashboard, from the public demo that runs on fictional sites](docs/screenshot.png)
 
@@ -22,7 +22,7 @@ Every 15 minutes it checks each site. When one goes down, it asks an AI model wh
 
 1. It never touches `main`. It only ever opens a pull request.
 2. A fix may change **one file only**. Anything touching more is rejected.
-3. A fix must be **under 15 changed lines**. Anything bigger is flagged for manual review.
+3. A fix must be **15 changed lines or fewer**. Anything bigger is flagged for manual review.
 4. It uses a GitHub token scoped **only to the monitored sites' repos**. It can't modify itself.
 5. If anything is ambiguous or fails, it **fails closed**: no PR, just a note in the email.
 
