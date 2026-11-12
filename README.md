@@ -1,5 +1,13 @@
 # Jarvis: a site monitor that explains outages and proposes fixes
 
+Checks my sites every 15 minutes, explains outages in plain English, and opens a small, guarded fix PR I can approve from my phone.
+
+**[Live demo](https://jarvis-demo.pages.dev)** · **[Portfolio](https://cianmccaul.vercel.app)**
+
+![The Jarvis dashboard, from the public demo that runs on fictional sites](docs/screenshot.png)
+
+The real dashboard sits behind a sign-in and shows my clients' sites, so the screenshot and the live demo come from [jarvis-demo](https://github.com/cianmccaul/jarvis-demo): the same dashboard design and fix logic, run on four fictional sites.
+
 I look after a few websites for small businesses. I wanted to know when one went down before a customer did, understand why without digging through logs, and fix small problems from my phone. Jarvis does that.
 
 Every 15 minutes it checks each site. When one goes down, it asks an AI model what the symptoms most likely mean, emails me a plain-English explanation, and, if the fix is small and safe, opens a pull request I can approve with one tap.
@@ -32,7 +40,7 @@ Reports are stored in Vercel Blob and emailed as a summary.
 
 **Dashboard.** A small web app, installable on an iPhone home screen, showing live status, the incident history, past reports, and an **Ask Jarvis** chat to talk through any incident with the AI.
 
-## How it fits together
+## How it works
 
 ```
 GitHub Actions (every 15 min)            GitHub Actions (Mondays)
@@ -53,20 +61,35 @@ Dashboard on Vercel  (dashboard/)
 
 No database: state lives in JSON files the workflow commits back to the repo, which also keeps a full audit trail of every status change.
 
-## Built with
+## Run it locally
 
-Node.js, GitHub Actions, Groq (LLM), Resend (email), Octokit (GitHub API), Playwright, pixelmatch, Google PageSpeed API, Vercel and Vercel Blob.
+There's no `package.json`; the workflows install what they need. To try one health check from your own machine:
 
-## Running it yourself
+```
+npm install --no-save groq-sdk resend @octokit/rest
+GROQ_API_KEY=... RESEND_API_KEY=... NOTIFY_EMAIL=you@example.com node scripts/check.js
+```
+
+It checks every site in `sites.json` and writes `dashboard/status.json` (and `incidents.json` when something changes). `FIX_PR_TOKEN` is optional; without it Jarvis explains outages but never proposes a fix.
+
+### Running your own instance
 
 This public copy has its schedules turned off. The live instance runs from a private repo. To run your own:
 
 1. Put your sites in `sites.json` (name, URL, and the GitHub repo that deploys it).
 2. Add these repository secrets: `GROQ_API_KEY`, `RESEND_API_KEY`, `NOTIFY_EMAIL`, `FIX_PR_TOKEN` (a fine-grained token with access to your sites' repos only), plus `BLOB_READ_WRITE_TOKEN` and `PAGESPEED_API_KEY` for weekly reports.
 3. Restore the `schedule:` lines in `.github/workflows/check.yml` and `weeklyReport.yml`.
-4. Deploy `dashboard/` to Vercel with `GROQ_API_KEY`, `FIX_PR_TOKEN`, `DASHBOARD_USER`, `DASHBOARD_PASSWORD` and `DASHBOARD_SESSION_SECRET`.
+4. Deploy `dashboard/` to Vercel with `GROQ_API_KEY`, `FIX_PR_TOKEN`, `DASHBOARD_USER`, `DASHBOARD_PASSWORD` and `DASHBOARD_SESSION_SECRET`. `WORKFLOW_TRIGGER_TOKEN` is optional: if set, approving a fix also re-runs the health check straight away (the repo it triggers is set in `dashboard/api/approve.js`). Also change `DASHBOARD_URL` at the top of `scripts/check.js` to your dashboard's address, so the approve links in emails point at it.
 
 `dashboard/status.json`, `incidents.json` and `reports-index.json` are real data from my own sites, left in as examples.
+
+## Tests
+
+There are no automated tests in this repo. The guard rails (route-to-file lookup, find-and-replace fix, changed-line count) are ported into [jarvis-demo](https://github.com/cianmccaul/jarvis-demo), where you can watch each one pass or fail.
+
+## Built with
+
+Node.js, GitHub Actions, Groq (LLM), Resend (email), Octokit (GitHub API), Playwright, pixelmatch, Google PageSpeed API, Vercel and Vercel Blob.
 
 ---
 
